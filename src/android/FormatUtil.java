@@ -5,7 +5,7 @@
 	> Created Time: 2019年01月10日 星期四 10时09分08秒
  ************************************************************************/
 
-package com.plugin.SerialPortPlugin;
+package android_serialport_api;
 
 public class FormatUtil {
     public static byte[] hexString2Bytes(String str) {
