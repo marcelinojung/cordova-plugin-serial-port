@@ -29,7 +29,7 @@ public class SerialPort {
                 //通过挂在到linux的方式，修改文件的操作权限
                 Process su = Runtime.getRuntime().exec("/system/xbin/su");
                 //一般的都是/system/bin/su路径，有的也是/system/xbin/su
-                String cmd = "chmod 777 " + device.getAbsolutePath() + "\n" + "exit\n";
+                String cmd = "chmod 666 " + device.getAbsolutePath() + "\n" + "exit\n";
                 Log.e("cmd :",cmd);
                 su.getOutputStream().write(cmd.getBytes());
 
