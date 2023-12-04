@@ -1,4 +1,4 @@
-package com.plugin.SerialPortPlugin;
+package android_serialport_api;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
