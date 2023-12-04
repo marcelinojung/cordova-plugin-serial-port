@@ -17,7 +17,6 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import android_serialport_api.SerialPort;
-import android_serialport_api.FormatUtil;
 import java.util.concurrent.locks.*;
 /**
  * This class echoes a string called from JavaScript.
