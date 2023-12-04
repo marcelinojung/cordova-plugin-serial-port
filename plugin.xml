@@ -9,7 +9,7 @@
     <platform name="android">
         <config-file parent="/*" target="res/xml/config.xml">
             <feature name="SerialPortPlugin">
-                <param name="android-package" value="com.plugin.SerialPortPlugin.SerialPortPlugin" />
+                <param name="android-package" value="android_serialport_api.SerialPortPlugin" />
             </feature>
         </config-file>
         <config-file parent="/*" target="AndroidManifest.xml"></config-file>
