@@ -2,6 +2,7 @@ package android_serialport_api;
 
 import org.apache.cordova.CordovaPlugin;
 import org.apache.cordova.CallbackContext;
+import org.apache.cordova.PluginResult;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -28,6 +29,9 @@ public class SerialPortPlugin extends CordovaPlugin {
     private OutputStream outputStream;
     private ReadDataThread readThread;
     private boolean dataModel;
+    private boolean continuousRead;
+    private Thread continuousReadThread;
+    private boolean isPortOpen = false;
 
     @Override
     public boolean execute(String action, JSONArray args, CallbackContext callbackContext) throws JSONException {
@@ -61,9 +65,47 @@ public class SerialPortPlugin extends CordovaPlugin {
             this.setHex(message);
             return true;
         }
+        else if (action.equals("readcallback")) {
+            continuousRead = true; // Set the flag to true for continuous reading
+            this.startContinuousRead(callbackContext);
+            return true;
+        }
+
 
         return false;
     }
+
+    private void startContinuousRead(CallbackContext callbackContext) {
+        if (continuousRead) {
+            // Check if a continuous read thread is already running and stop it
+            if (continuousReadThread != null && continuousReadThread.isAlive()) {
+                continuousReadThread.interrupt(); // Stop the existing thread
+                System.out.println("Thread stoped *************************************");
+            }
+    
+            continuousReadThread = new Thread(new Runnable() {
+                @Override
+                public void run() {
+                    while (continuousRead) {
+                        String data = readThread.getData();
+                        if (data != null) {
+                            PluginResult result = new PluginResult(PluginResult.Status.OK, data);
+                            result.setKeepCallback(true);
+                            callbackContext.sendPluginResult(result);
+                        }
+                        try {
+                            Thread.sleep(300); // Adjust the sleep duration as needed
+                        } catch (InterruptedException e) {
+                            e.printStackTrace();
+                        }
+                    }
+                }
+            });
+    
+            continuousReadThread.start();
+        }
+    }
+
 
     private void openDevice(String message, CallbackContext callbackContext) {
         JSONArray jsonArray = null;
@@ -121,6 +163,8 @@ public class SerialPortPlugin extends CordovaPlugin {
                 outputStream = serialPort.getOutputStream();
                 readThread = new ReadDataThread( "Thread-Read", inputStream, this.dataModel);
                 readThread.start();
+                isPortOpen = true;
+
                 callbackContext.success("open device success");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -157,7 +201,8 @@ public class SerialPortPlugin extends CordovaPlugin {
             try {
                 byte[] byteArray;
                 if(this.dataModel == true) {
-                    byteArray =FormatUtil.hexString2Bytes(message);
+                    // byteArray =FormatUtil.hexString2Bytes(message);
+                    byteArray = message.getBytes(); // ascii to byte 
                 } else {
                     byteArray = message.getBytes();
                 }
@@ -234,49 +279,53 @@ class ReadDataThread implements Runnable {
       System.out.println("Creating " +  threadName );
    }
 
+   
+
    public void run() {
-	 int readSize = -1;
-     while(running) {
-         try {
-			 if((readSize = input.available()) <= 0) {  //get the buffer length before read. if you do not, the read will block
-				try {
-					Thread.sleep(1);
-				} catch(Exception e) {
-				}
-				continue;
-			 }
-          } catch (IOException e) {
-                e.printStackTrace();
-      			System.out.println("Thread" +  threadName + " break exiting..");
-				break;
+
+      int readSize = -1;
+      while(running) {
+        try {
+          if((readSize = input.available()) <= 0) {  //get the buffer length before read. if you do not, the read will block
+            try {
+              Thread.sleep(1);
+            } catch(Exception e) {
+            }
+            continue;
           }
-          System.out.println("readSize:" + readSize);
-          byte[] byteArray = new byte[readSize];
-          try {
-                readLen = input.read(byteArray);
-          } catch (IOException e) {
-                e.printStackTrace();
-      			System.out.println("Thread" +  threadName + " break exiting..");
-				break;
-          }
-          lock.lock(); // must lock to copy readData
-          if(this.dataModel == true) {
-			 readData += FormatUtil.bytes2HexString(byteArray, readLen);
-          } else {
-			readData += new String(byteArray);
-          }
-          lock.unlock();
-          System.out.println("readstr:" + readData);
+        } catch (IOException e) {
+          e.printStackTrace();
+          System.out.println("Thread" +  threadName + " break exiting..");
+          break;
+        }
+        System.out.println("readSize:" + readSize);
+        byte[] byteArray = new byte[readSize];
+        try {
+          readLen = input.read(byteArray);
+        } catch (IOException e) {
+          e.printStackTrace();
+          System.out.println("Thread" +  threadName + " break exiting..");
+          break;
+        }
+        lock.lock(); // must lock to copy readData
+        
+        if(this.dataModel == true) {
+          readData = FormatUtil.bytes2HexString(byteArray, readLen);
+        } else {
+          readData = new String(byteArray);
+        }
+        lock.unlock();
+        // System.out.println("readstr:" + readData);
       }
 
-	  if(running) {
-		 try {
-			input.close();
-		 } catch (IOException e) {
-			e.printStackTrace();
-		 }
-	  }
-      System.out.println("Thread" +  threadName + " success exiting..");
+      if(running) {
+      try {
+        input.close();
+      } catch (IOException e) {
+        e.printStackTrace();
+      }
+    }
+    System.out.println("Thread" +  threadName + " success exiting..");
    }
 
    public void setHex(boolean model) {
@@ -304,9 +353,9 @@ class ReadDataThread implements Runnable {
    }
 
    public void stop() {
-	 this.running = false;
+   this.running = false;
      try {
-		input.close();
+    input.close();
      } catch (IOException e) {
         e.printStackTrace();
      }
