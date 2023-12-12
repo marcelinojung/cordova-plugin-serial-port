@@ -1,7 +1,3 @@
-cordova.define("cordova-plugin-serial-port.SerialPortPlugin", function(require, exports, module) {
-var exec = require('cordova/exec');
-
-
 var SerialPort = {
 
     openDevice: function (settings, success, error) {
@@ -28,5 +24,3 @@ var SerialPort = {
 };
 
 module.exports = SerialPort;
-
-});
