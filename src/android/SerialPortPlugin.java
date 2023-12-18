@@ -81,6 +81,7 @@ public class SerialPortPlugin extends CordovaPlugin {
             if (continuousReadThread != null && continuousReadThread.isAlive()) {
                 continuousReadThread.interrupt(); // Stop the existing thread
                 System.out.println("Thread stoped *************************************");
+                callbackContext.error("close");
             }
     
             continuousReadThread = new Thread(new Runnable() {
