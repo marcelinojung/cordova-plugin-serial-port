@@ -80,8 +80,10 @@ public class SerialPortPlugin extends CordovaPlugin {
             // Check if a continuous read thread is already running and stop it
             if (continuousReadThread != null && continuousReadThread.isAlive()) {
                 continuousReadThread.interrupt(); // Stop the existing thread
+                continuousRead = false; 
                 System.out.println("Thread stoped *************************************");
                 callbackContext.error("close");
+                return; 
             }
     
             continuousReadThread = new Thread(new Runnable() {
@@ -181,6 +183,7 @@ public class SerialPortPlugin extends CordovaPlugin {
                 readThread.stop();
                 outputStream.close();
                 serialPort.close();
+                continuousReadThread.interrupt();
                 callbackContext.success("close device success");
             } catch (Throwable e) {
                 e.printStackTrace();
@@ -208,7 +211,7 @@ public class SerialPortPlugin extends CordovaPlugin {
                     byteArray = message.getBytes();
                 }
                 outputStream.write(byteArray);
-                System.out.println("writestr:" + message);
+                // System.out.println("writestr:" + message);
                 callbackContext.success("write data success");
             } catch (IOException e) {
                 e.printStackTrace();
@@ -299,7 +302,7 @@ class ReadDataThread implements Runnable {
           System.out.println("Thread" +  threadName + " break exiting..");
           break;
         }
-        System.out.println("readSize:" + readSize);
+        // System.out.println("readSize:" + readSize);
         byte[] byteArray = new byte[readSize];
         try {
           readLen = input.read(byteArray);
